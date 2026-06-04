@@ -1,17 +1,36 @@
 ---
+// Importamos Tailwind CSS para que el diseño funcione
+import '../styles/global.css';
 
+// 1. Astro hace la petición a tu Strapi 
+const respuesta = await fetch('http://localhost:1337/api/configuracion-radio');
+const json = await respuesta.json();
+
+// 2. Extraemos los datos del JSON
+const radio = json.data;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{radio.nombre_estacion}</title> 
+  </head>
+  
+  <body class="bg-[#112A46] text-white min-h-screen flex flex-col items-center justify-center p-4">
+    
+    <div class="text-center">
+      <div class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse inline-block mb-4">
+        🔴 EN VIVO
+      </div>
+      
+      <h1 class="text-5xl font-bold text-[#D4AF37] mb-2">
+        {radio.nombre_estacion}
+      </h1>
+      <p class="text-gray-300 mb-8">La estación de la Reconciliación</p>
+      
+      <audio controls src={radio.url_stream} class="w-full max-w-md mx-auto"></audio>
+    </div>
+
+  </body>
 </html>
