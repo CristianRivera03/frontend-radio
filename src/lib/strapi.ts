@@ -1,6 +1,7 @@
 import type { ConfiguracionGlobal, InicioData, Locutor, Programa, EmisionAnterior } from "../types/strapi.interface";
 
-const STRAPI_URL = 'https://backend-radio-91v4.onrender.com/api';
+export const STRAPI_BASE_URL = 'https://backend-radio-91v4.onrender.com';
+const STRAPI_URL = `${STRAPI_BASE_URL}/api`;
 
 // Función para obtener la Configuración Global
 export async function obtenerConfiguracion() : Promise<ConfiguracionGlobal | null> {

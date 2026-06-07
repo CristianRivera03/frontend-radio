@@ -1,6 +1,6 @@
 ---
 import LayoutPrincipal from '../layouts/LayoutPrincipal.astro';
-import { obtenerConfiguracion, obtenerProgramas } from '../lib/strapi';
+import { obtenerConfiguracion, obtenerProgramas, STRAPI_BASE_URL } from '../lib/strapi';
 
 const config = await obtenerConfiguracion();
 let programas = await obtenerProgramas();
@@ -19,7 +19,7 @@ if (programas.length === 0) {
   ];
 }
 
-const urlDelLogo = config.logo_principal?.url ? `http://localhost:1337${config.logo_principal.url}` : '';
+const urlDelLogo = config.logo_principal?.url ? `${STRAPI_BASE_URL}${config.logo_principal.url}` : '';
 
 // Helper para formatear la hora de Strapi (vienen en formato "HH:mm:ss.SSS")
 const formatearHora = (hora: string) => {
@@ -77,7 +77,7 @@ const programasPorDia = diasOrdenados.map(dia => {
                     <div class="flex items-center gap-4">
                       {programa.portada?.url && (
                         <div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 hidden sm:block border border-white/20">
-                          <img src={`http://localhost:1337${programa.portada.url}`} alt={programa.nombre_programa} class="w-full h-full object-cover" />
+                          <img src={`${STRAPI_BASE_URL}${programa.portada.url}`} alt={programa.nombre_programa} class="w-full h-full object-cover" />
                         </div>
                       )}
                       <div>

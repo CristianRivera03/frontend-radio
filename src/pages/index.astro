@@ -1,6 +1,6 @@
 ---
 import LayoutPrincipal from '../layouts/LayoutPrincipal.astro';
-import { obtenerConfiguracion, obtenerInicio, obtenerLocutores, obtenerEmisiones } from '../lib/strapi';
+import { obtenerConfiguracion, obtenerInicio, obtenerLocutores, obtenerEmisiones, STRAPI_BASE_URL } from '../lib/strapi';
 
 // Hacemos las peticiones al backend
 const config = await obtenerConfiguracion();
@@ -29,7 +29,7 @@ if (emisiones.length === 0) {
 
 // Armamos la URL completa del logo (Si existe, le pegamos el localhost)
 const urlDelLogo = config.logo_principal?.url 
-  ? `http://localhost:1337${config.logo_principal.url}` 
+  ? `${STRAPI_BASE_URL}${config.logo_principal.url}` 
   : '';
 
 // Helper para armar URLs de imágenes de Strapi
@@ -39,7 +39,7 @@ const getImageUrl = (url?: string) => {
   
   if (!url) return safeFallback;
   if (url.startsWith('/mock')) return safeFallback;
-  return url.startsWith('http') ? url : `http://localhost:1337${url}`;
+  return url.startsWith('http') ? url : `${STRAPI_BASE_URL}${url}`;
 };
 ---
 
