@@ -1,0 +1,115 @@
+---
+import LayoutPrincipal from '../layouts/LayoutPrincipal.astro';
+import { obtenerConfiguracion, obtenerProgramas } from '../lib/strapi';
+
+const config = await obtenerConfiguracion();
+let programas = await obtenerProgramas();
+
+if (!config) {
+  throw new Error("No se pudo conectar con el CMS. Verifica que Strapi esté corriendo.");
+}
+
+// Datos de prueba (MOCK) si las colecciones están vacías
+if (programas.length === 0) {
+  programas = [
+    { id: 1, documentId: 'p1', nombre_programa: 'Despertar Cristiano', dia_semana: 'Lunes', hora_inicio: '06:00:00.000', hora_fin: '09:00:00.000' },
+    { id: 2, documentId: 'p2', nombre_programa: 'Alabanzas al Mediodía', dia_semana: 'Lunes', hora_inicio: '12:00:00.000', hora_fin: '14:00:00.000' },
+    { id: 3, documentId: 'p3', nombre_programa: 'Estudio Bíblico', dia_semana: 'Miércoles', hora_inicio: '19:00:00.000', hora_fin: '21:00:00.000' },
+    { id: 4, documentId: 'p4', nombre_programa: 'Culto Dominical', dia_semana: 'Domingo', hora_inicio: '09:00:00.000', hora_fin: '12:00:00.000' }
+  ];
+}
+
+const urlDelLogo = config.logo_principal?.url ? `http://localhost:1337${config.logo_principal.url}` : '';
+
+// Helper para formatear la hora de Strapi (vienen en formato "HH:mm:ss.SSS")
+const formatearHora = (hora: string) => {
+  if (!hora) return '';
+  const [h, m] = hora.split(':');
+  const horaNum = parseInt(h);
+  const ampm = horaNum >= 12 ? 'PM' : 'AM';
+  const hora12 = horaNum % 12 || 12;
+  return `${hora12}:${m} ${ampm}`;
+};
+
+// Agrupar programas por día
+const diasOrdenados = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+// Ignoramos case sensitivity y tildes para agrupar mejor
+const normalizarDia = (dia: string) => dia.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const programasPorDia = diasOrdenados.map(dia => {
+  return {
+    dia,
+    programas: programas.filter(p => normalizarDia(p.dia_semana) === normalizarDia(dia))
+  };
+}).filter(grupo => grupo.programas.length > 0); // Solo mostramos los días que tienen programas
+
+---
+
+<LayoutPrincipal 
+  tituloNavegador={`Programación | ${config.nombre_estacion}`} 
+  nombreEstacion={config.nombre_estacion} 
+  urlStream={config.url_stream} 
+  facebook={config.enlace_facebook} 
+  whatsapp={config.enlace_whatsapp}
+  logoUrl={urlDelLogo}
+>
+
+  <div class="bg-[var(--color-brand-dark)] min-h-[70vh] py-16 px-4">
+    <div class="max-w-5xl mx-auto">
+      
+      <div class="text-center mb-16">
+        <h4 class="text-[var(--color-brand-gold)] font-semibold tracking-widest uppercase mb-2">Nuestra Grilla</h4>
+        <h1 class="text-4xl md:text-6xl font-extrabold text-white">Programación Semanal</h1>
+        <div class="divider w-24 mx-auto before:bg-[var(--color-brand-gold)] after:bg-[var(--color-brand-gold)] mt-8"></div>
+      </div>
+
+      {programasPorDia.length > 0 ? (
+        <div class="space-y-12">
+          {programasPorDia.map((grupo) => (
+            <div class="card bg-base-100/10 backdrop-blur-sm border border-white/10 shadow-xl overflow-hidden">
+              <div class="bg-[var(--color-brand-blue)]/50 px-6 py-4 border-b border-white/10">
+                <h2 class="text-2xl font-bold text-[var(--color-brand-gold)]">{grupo.dia}</h2>
+              </div>
+              <div class="divide-y divide-white/5">
+                {grupo.programas.map((programa) => (
+                  <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors">
+                    <div class="flex items-center gap-4">
+                      {programa.portada?.url && (
+                        <div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 hidden sm:block border border-white/20">
+                          <img src={`http://localhost:1337${programa.portada.url}`} alt={programa.nombre_programa} class="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div>
+                        <h3 class="text-xl font-bold text-white">{programa.nombre_programa}</h3>
+                        {programa.locutores && programa.locutores.length > 0 && (
+                          <p class="text-gray-400 text-sm mt-1">
+                            Con: <span class="text-gray-300">{programa.locutores.map(l => l.nombre).join(', ')}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 bg-black/30 px-4 py-2 rounded-full border border-white/10">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[var(--color-brand-gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span class="text-gray-200 font-medium">
+                        {formatearHora(programa.hora_inicio)} - {formatearHora(programa.hora_fin)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-20 bg-base-100/10 backdrop-blur-sm border border-white/10 rounded-2xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <h3 class="text-2xl font-semibold text-white">Próximamente más programación</h3>
+          <p class="text-gray-400 mt-2">Mantente sintonizado para conocer nuestros nuevos programas.</p>
+        </div>
+      )}
+
+    </div>
+  </div>
+
+</LayoutPrincipal>

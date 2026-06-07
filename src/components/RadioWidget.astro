@@ -1,0 +1,108 @@
+---
+interface Props {
+  nombreEstacion: string;
+  urlStream: string;
+  logoUrl?: string;
+}
+const { nombreEstacion, urlStream, logoUrl } = Astro.props;
+---
+
+<div class="flex justify-center w-full px-4 mb-4">
+  <div class="bg-base-100/70 backdrop-blur-xl border border-white/10 text-base-content p-2 md:p-3 shadow-2xl rounded-full z-50 flex items-center gap-4 md:gap-8 max-w-4xl w-full mx-auto transition-all hover:bg-base-100/80">
+    
+    <!-- Logo / Info -->
+    <div class="flex items-center gap-3 md:gap-4 pl-2">
+      <div class="w-10 h-10 md:w-12 md:h-12 bg-black/50 rounded-full flex items-center justify-center overflow-hidden border border-[var(--color-brand-gold)] shadow-inner">
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo" class="w-full h-full object-cover" />
+        ) : (
+          <span class="text-[var(--color-brand-gold)] text-xl">🎵</span>
+        )}
+      </div>
+      <div class="hidden sm:block">
+        <h4 class="font-bold text-[var(--color-brand-gold)] leading-tight tracking-wide text-sm md:text-base">{nombreEstacion}</h4>
+        <p class="text-[10px] md:text-xs text-gray-300 flex items-center gap-1.5 uppercase tracking-wider mt-0.5">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>
+          </span>
+          Transmisión en vivo
+        </p>
+      </div>
+    </div>
+
+    <!-- Visualizer (Fake) / Text -->
+    <div class="flex-1 flex justify-center text-center">
+      <div class="sm:hidden flex flex-col items-center">
+         <h4 class="font-bold text-[var(--color-brand-gold)] leading-tight text-sm">{nombreEstacion}</h4>
+         <p class="text-[9px] text-gray-300 flex items-center gap-1 uppercase tracking-widest mt-1">En vivo <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span></p>
+      </div>
+      <div class="hidden sm:flex items-center gap-1 h-6">
+        <div class="w-1 bg-[var(--color-brand-gold)]/60 h-2 animate-[pulse_1s_ease-in-out_infinite]"></div>
+        <div class="w-1 bg-[var(--color-brand-gold)]/80 h-4 animate-[pulse_1.2s_ease-in-out_infinite_0.1s]"></div>
+        <div class="w-1 bg-[var(--color-brand-gold)] h-6 animate-[pulse_0.8s_ease-in-out_infinite_0.2s]"></div>
+        <div class="w-1 bg-[var(--color-brand-gold)]/80 h-3 animate-[pulse_1.5s_ease-in-out_infinite_0.3s]"></div>
+        <div class="w-1 bg-[var(--color-brand-gold)]/60 h-5 animate-[pulse_1.1s_ease-in-out_infinite_0.4s]"></div>
+      </div>
+    </div>
+
+    <!-- Audio & Controls -->
+    <audio id="audio-player" src={urlStream} preload="none"></audio>
+    
+    <div class="pr-2">
+      <button id="btn-play-pause" class="btn btn-circle bg-[var(--color-brand-gold)] hover:bg-[#b8952b] border-none text-black shadow-[0_0_15px_rgba(212,175,55,0.4)] hover:shadow-[0_0_20px_rgba(212,175,55,0.6)] hover:scale-105 transition-all">
+        <svg id="icon-play-bar" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="icon-pause-bar" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Lógica reproductor
+  const audio = document.getElementById('audio-player') as HTMLAudioElement;
+  const btnPlayPause = document.getElementById('btn-play-pause');
+  const iconPlay = document.getElementById('icon-play-bar');
+  const iconPause = document.getElementById('icon-pause-bar');
+  
+  // Elementos del Modal
+  const modal = document.getElementById('modal_bienvenida') as HTMLDialogElement;
+  const btnEntrar = document.getElementById('btn-entrar');
+
+  let isPlaying = false;
+
+  // Función para alternar el audio
+  function toggleAudio() {
+    if (isPlaying) {
+      audio.pause();
+      iconPlay?.classList.remove('hidden');
+      iconPause?.classList.add('hidden');
+    } else {
+      audio.play();
+      iconPlay?.classList.add('hidden');
+      iconPause?.classList.remove('hidden');
+    }
+    isPlaying = !isPlaying;
+  }
+
+  // Evento del botón de la barra inferior
+  btnPlayPause?.addEventListener('click', toggleAudio);
+
+  // Evento del botón del Modal
+  btnEntrar?.addEventListener('click', () => {
+    modal?.close(); // Cierra el modal
+    if (!isPlaying) {
+      toggleAudio(); // Inicia la música
+    }
+    // Guardamos en la sesión que ya entró para que no salga en cada recarga
+    sessionStorage.setItem('radio_bienvenida_vista', 'true');
+  });
+
+  // Mostrar el modal automáticamente si es la primera vez en la sesión
+  document.addEventListener('astro:page-load', () => {
+    const yaVisto = sessionStorage.getItem('radio_bienvenida_vista');
+    if (!yaVisto && modal) {
+      modal.showModal();
+    }
+  });
+</script>

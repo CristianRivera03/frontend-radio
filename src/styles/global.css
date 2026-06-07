@@ -1,1 +1,8 @@
 @import "tailwindcss";
+@plugin "daisyui";
+
+@theme {
+  --color-brand-blue: #112A46;
+  --color-brand-gold: #D4AF37;
+  --color-brand-dark: #0A192A; /* Un poco más oscuro para fondos */
+}

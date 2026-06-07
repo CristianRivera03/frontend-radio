@@ -1,36 +1,148 @@
 ---
-// Importamos Tailwind CSS para que el diseño funcione
-import '../styles/global.css';
+import LayoutPrincipal from '../layouts/LayoutPrincipal.astro';
+import { obtenerConfiguracion, obtenerInicio, obtenerLocutores, obtenerEmisiones } from '../lib/strapi';
 
-// 1. Astro hace la petición a tu Strapi 
-const respuesta = await fetch('http://localhost:1337/api/configuracion-radio');
-const json = await respuesta.json();
+// Hacemos las peticiones al backend
+const config = await obtenerConfiguracion();
+const inicio = await obtenerInicio();
+let locutores = await obtenerLocutores();
+let emisiones = await obtenerEmisiones();
 
-// 2. Extraemos los datos del JSON
-const radio = json.data;
+// Manejo de errores por si Strapi está apagado
+if (!config || !inicio) {
+  throw new Error("No se pudo conectar con el CMS. Verifica que Strapi esté corriendo y los datos publicados.");
+}
+
+// Datos de prueba (MOCK) si las colecciones están vacías (porque aún no las publicas en Strapi)
+if (locutores.length === 0) {
+  locutores = [
+    { id: 1, documentId: 'm1', nombre: 'Pastor Roberto', alias: 'Palabra de Vida', descripcion: 'Conduce el programa matutino compartiendo la palabra del Señor.', foto: { url: '/mock-locutor-1.jpg' } },
+    { id: 2, documentId: 'm2', nombre: 'Hermana Marta', alias: 'Alabanza y Adoración', descripcion: 'Nos acompaña cada tarde con los mejores cánticos.', foto: { url: '/mock-locutor-2.jpg' } }
+  ];
+}
+if (emisiones.length === 0) {
+  emisiones = [
+    { id: 1, documentId: 'e1', titulo: 'Culto Dominical - 5 de Junio', url_video: '#', fecha: '2026-06-05', miniatura: { url: '/mock-emision-1.jpg' } },
+    { id: 2, documentId: 'e2', titulo: 'Estudio Bíblico: El libro de Juan', url_video: '#', fecha: '2026-06-03', miniatura: { url: '/mock-emision-2.jpg' } }
+  ];
+}
+
+// Armamos la URL completa del logo (Si existe, le pegamos el localhost)
+const urlDelLogo = config.logo_principal?.url 
+  ? `http://localhost:1337${config.logo_principal.url}` 
+  : '';
+
+// Helper para armar URLs de imágenes de Strapi
+const getImageUrl = (url?: string) => {
+  // Imagen segura por defecto (un micrófono de radio genérico o fondo neutro azul oscuro)
+  const safeFallback = 'https://images.unsplash.com/photo-1516280440502-6c61d5633a25?auto=format&fit=crop&q=80&w=800'; 
+  
+  if (!url) return safeFallback;
+  if (url.startsWith('/mock')) return safeFallback;
+  return url.startsWith('http') ? url : `http://localhost:1337${url}`;
+};
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>{radio.nombre_estacion}</title> 
-  </head>
-  
-  <body class="bg-[#112A46] text-white min-h-screen flex flex-col items-center justify-center p-4">
-    
-    <div class="text-center">
-      <div class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse inline-block mb-4">
-        🔴 EN VIVO
+<LayoutPrincipal 
+  tituloNavegador={`Inicio | ${config.nombre_estacion}`} 
+  nombreEstacion={config.nombre_estacion} 
+  urlStream={config.url_stream} 
+  facebook={config.enlace_facebook} 
+  whatsapp={config.enlace_whatsapp}
+  logoUrl={urlDelLogo}
+>
+
+  <!-- Hero Section Principal -->
+  <div class="hero min-h-[70vh]" style="background-image: url('https://images.unsplash.com/photo-1628965945038-129d64e257ce?q=80&w=2000&auto=format&fit=crop');">
+    <div class="hero-overlay bg-gradient-to-b from-[var(--color-brand-dark)]/90 via-[var(--color-brand-blue)]/80 to-[var(--color-brand-dark)]"></div>
+    <div class="hero-content text-center text-neutral-content z-10 px-4 pt-10">
+      <div class="max-w-3xl">
+        <span class="badge badge-outline border-[var(--color-brand-gold)] text-[var(--color-brand-gold)] mb-6 uppercase tracking-[0.3em] font-semibold">En Vivo 24/7</span>
+        <h1 class="mb-6 text-5xl md:text-7xl font-extrabold text-white tracking-tight drop-shadow-xl">
+          {inicio.titulo_hero}
+        </h1>
+        <h2 class="mb-8 text-xl md:text-3xl font-light text-gray-200 drop-shadow-md max-w-2xl mx-auto">
+          {inicio.subtitulo_hero}
+        </h2>
+        <div class="flex flex-wrap justify-center gap-4 mt-8">
+          <a href={config.enlace_whatsapp}target="_blank" class="btn btn-lg rounded-full bg-[var(--color-brand-gold)] hover:bg-[#b8952b] text-black border-none shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] transition-all hover:-translate-y-1">
+            Escribe tu petición
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          </a>
+          <a href="#nosotros" class="btn btn-lg rounded-full btn-outline border-white/30 text-white hover:bg-white/10 hover:border-white transition-all">
+            Conoce más
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección Nosotros -->
+  <section id="nosotros" class="py-24 px-4 bg-gradient-to-b from-[var(--color-brand-dark)] to-[#08121f]">
+    <div class="max-w-4xl mx-auto text-center">
+      <h3 class="text-3xl md:text-5xl font-bold text-white mb-6">Nuestra Misión</h3>
+      <div class="divider w-24 mx-auto before:bg-[var(--color-brand-gold)] after:bg-[var(--color-brand-gold)]"></div> 
+      <div class="card bg-base-100/10 backdrop-blur-md border border-white/5 shadow-2xl mt-12 p-8 md:p-12">
+        <p class="text-gray-300 leading-relaxed whitespace-pre-wrap text-lg md:text-xl font-light text-justify md:text-center">
+          {inicio.texto_nosotros}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Emisiones Anteriores -->
+  <section class="py-24 px-4 bg-[#08121f]">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h4 class="text-[var(--color-brand-gold)] font-semibold tracking-widest uppercase mb-2">Nuestros Vivos</h4>
+        <h3 class="text-4xl md:text-5xl font-bold text-white">Emisiones Anteriores</h3>
       </div>
       
-      <h1 class="text-5xl font-bold text-[#D4AF37] mb-2">
-        {radio.nombre_estacion}
-      </h1>
-      <p class="text-gray-300 mb-8">La estación de la Reconciliación</p>
-      
-      <audio controls src={radio.url_stream} class="w-full max-w-md mx-auto"></audio>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {emisiones.map((emision) => (
+          <a href={emision.url_video} target="_blank" class="card bg-base-100/20 glass hover:scale-[1.02] transition-transform duration-300 overflow-hidden group border border-white/10">
+            <figure class="relative h-64 overflow-hidden">
+              <img src={getImageUrl(emision.miniatura?.url)} alt={emision.titulo} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <div class="w-16 h-16 rounded-full bg-[var(--color-brand-gold)] flex items-center justify-center text-black shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+            </figure>
+            <div class="card-body p-6">
+              <h2 class="card-title text-white text-xl">{emision.titulo}</h2>
+              <p class="text-gray-400 text-sm">{new Date(emision.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              {emision.descripcion && <p class="text-gray-300 mt-2 line-clamp-2">{emision.descripcion}</p>}
+            </div>
+          </a>
+        ))}
+      </div>
     </div>
+  </section>
 
-  </body>
-</html>
+  <!-- Sección Locutores -->
+  <section class="py-24 px-4 bg-gradient-to-b from-[#08121f] to-[var(--color-brand-dark)]">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h4 class="text-[var(--color-brand-gold)] font-semibold tracking-widest uppercase mb-2">Locutores</h4>
+        <h3 class="text-4xl md:text-5xl font-bold text-white">La familia de Radio Estéreo Salvación</h3>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {locutores.map((locutor) => (
+          <div class="card bg-base-100/10 backdrop-blur-sm border border-white/5 overflow-hidden group hover:border-[var(--color-brand-gold)]/50 transition-colors">
+            <figure class="h-80 relative overflow-hidden">
+              <img src={getImageUrl(locutor.foto?.url)} alt={locutor.nombre} class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-[var(--color-brand-dark)] via-transparent to-transparent opacity-80"></div>
+              <div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                <h2 class="text-2xl font-bold text-white">{locutor.nombre}</h2>
+                {locutor.alias && <p class="text-[var(--color-brand-gold)] font-medium text-sm mt-1">{locutor.alias}</p>}
+              </div>
+            </figure>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+</LayoutPrincipal>
